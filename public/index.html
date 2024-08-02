@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Airtable Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #data {
+            margin-top: 20px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Real-time Airtable Data</h1>
+    <button id="fetchDataButton">Fetch Data</button>
+    <div id="data">Click the button to fetch data</div>
+
+    <script>
+        const dataDiv = document.getElementById('data');
+        const fetchDataButton = document.getElementById('fetchDataButton');
+
+        fetchDataButton.addEventListener('click', () => {
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(records => {
+                    dataDiv.innerHTML = '';
+                    records.forEach(record => {
+                        const div = document.createElement('div');
+                        const name = record.fields.Name || 'No Name';
+                        const age = record.fields.Age || 'No Age';
+                        div.textContent = `Name: ${name}, Age: ${age}`;
+                        dataDiv.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    dataDiv.textContent = 'Error fetching data';
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+
+</html>
