@@ -14,8 +14,17 @@
             margin-top: 20px;
         }
 
-        button {
+        form {
             margin-top: 20px;
+        }
+
+        input {
+            margin: 5px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -25,30 +34,66 @@
 
 <body>
     <h1>Real-time Airtable Data</h1>
-    <button id="fetchDataButton">Fetch Data</button>
-    <div id="data">Click the button to fetch data</div>
+    <div id="data">Fetching data...</div>
+
+    <form id="addDataForm">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="number" id="age" placeholder="Age" required>
+        <button type="submit">Add Data</button>
+    </form>
 
     <script>
         const dataDiv = document.getElementById('data');
-        const fetchDataButton = document.getElementById('fetchDataButton');
+        const addDataForm = document.getElementById('addDataForm');
 
-        fetchDataButton.addEventListener('click', () => {
-            fetch('/api/data')
-                .then(response => response.json())
-                .then(records => {
-                    dataDiv.innerHTML = '';
-                    records.forEach(record => {
-                        const div = document.createElement('div');
-                        const name = record.fields.Name || 'No Name';
-                        const age = record.fields.Age || 'No Age';
-                        div.textContent = `Name: ${name}, Age: ${age}`;
-                        dataDiv.appendChild(div);
-                    });
-                })
-                .catch(error => {
-                    dataDiv.textContent = 'Error fetching data';
-                    console.error('Error:', error);
-                });
+        const socket = new WebSocket('ws://localhost:3000');
+
+        socket.onmessage = (event) => {
+            const records = JSON.parse(event.data);
+            dataDiv.innerHTML = '';
+            records.forEach(record => {
+                const div = document.createElement('div');
+                const name = record.fields.Name || 'No Name';
+                const age = record.fields.Age || 'No Age';
+                div.textContent = `Name: ${name}, Age: ${age}`;
+                dataDiv.appendChild(div);
+            });
+        };
+
+        socket.onerror = (error) => {
+            dataDiv.textContent = 'Error fetching data';
+            console.error('Error:', error);
+        };
+
+        addDataForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+
+            fetch('/api/addData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, age })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Success:', data);
+                    addDataForm.reset();
+                } else {
+                    console.error('Failed to add data:', data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
         });
     </script>
 </body>
